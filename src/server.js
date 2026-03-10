@@ -22,7 +22,15 @@ app.get("/", (_req, res) => {
     res.status(200).json({ message: "Backend is running" });
 });
 
+app.get("/health", (_req, res) => {
+    res.status(200).json({
+        status: "ok",
+        message: "WDC Server is running",
+    });
+});
+
 app.use("/api/auth", authRoutes);
+app.use("/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/users", userRoutes);
 app.use("/api/assignments", assignmentRoutes);
