@@ -2,6 +2,7 @@ import jwt from "jsonwebtoken";
 
 const googleAuthSuccess = (req, res) => {
     const user = req.user;
+    const jwtSecret = process.env.JWT_SECRET;
 
     if (!user) {
         return res.status(401).json({
@@ -10,13 +11,19 @@ const googleAuthSuccess = (req, res) => {
         });
     }
 
+    if (!jwtSecret) {
+        return res.status(500).json({
+            success: false,
+            message: "JWT secret is not configured",
+        });
+    }
+
     const token = jwt.sign(
         {
             userId: user._id,
-            email: user.email,
             role: user.role,
         },
-        process.env.JWT_SECRET,
+        jwtSecret,
         {
             expiresIn: "7d",
         }

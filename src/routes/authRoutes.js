@@ -17,11 +17,23 @@ router.get(
 
 router.get(
     "/google/callback",
-    passport.authenticate("google", {
-        session: false,
-        failureRedirect: "/api/auth/google/failure",
-    }),
-    googleAuthSuccess
+    (req, res, next) => {
+        passport.authenticate("google", { session: false }, (error, user, info) => {
+            if (error) {
+                return next(error);
+            }
+
+            if (!user) {
+                return res.status(401).json({
+                    success: false,
+                    message: info?.message || "Google authentication failed",
+                });
+            }
+
+            req.user = user;
+            return googleAuthSuccess(req, res);
+        })(req, res, next);
+    }
 );
 
 router.get("/google/failure", googleAuthFailure);

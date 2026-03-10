@@ -50,9 +50,13 @@ const userSchema = new mongoose.Schema(
             min: 0,
             max: 100,
         },
+        createdAt: {
+            type: Date,
+            default: Date.now,
+        },
     },
     {
-        timestamps: true,
+        timestamps: false,
     }
 );
 
