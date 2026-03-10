@@ -1,0 +1,287 @@
+WDC BACKEND → FRONTEND INTEGRATION HANDOFF
+=========================================
+
+Backend Base URL
+----------------
+Use this in frontend:
+- http://localhost:5000/api
+
+Auth alias also exists:
+- http://localhost:5000/auth
+
+
+1) AUTH FLOW (GOOGLE OAUTH)
+---------------------------
+Frontend login button should redirect browser to:
+- http://localhost:5000/api/auth/google
+  (or /auth/google)
+
+After successful login, backend returns JSON from callback with:
+- token (JWT)
+- user object
+
+Store token on frontend (localStorage/sessionStorage) and send in every protected request:
+Authorization: Bearer <token>
+
+
+2) REQUIRED REQUEST HEADERS
+---------------------------
+For protected routes:
+- Authorization: Bearer <jwt_token>
+
+For JSON body routes:
+- Content-Type: application/json
+
+
+3) COMMON RESPONSE FORMAT
+-------------------------
+Most responses return:
+{
+  "success": true|false,
+  "message": "...",
+  ...data
+}
+
+
+4) PUBLIC ROUTES
+----------------
+GET /
+Response 200:
+{ "message": "Backend is running" }
+
+GET /health
+Response 200:
+{ "status": "ok", "message": "WDC Server is running" }
+
+
+5) AUTH ROUTES
+--------------
+GET /api/auth/google
+- Starts Google OAuth flow (browser redirect)
+
+GET /api/auth/google/callback
+Response 200:
+{
+  "success": true,
+  "message": "Google authentication successful",
+  "token": "<jwt>",
+  "user": { ... }
+}
+
+GET /api/auth/google/failure
+Response 401:
+{ "success": false, "message": "Google authentication failed" }
+
+
+6) USER ROUTES (PROTECTED)
+--------------------------
+GET /api/users/profile
+Response 200:
+{ "success": true, "user": { ... } }
+
+PUT /api/users/profile
+Body (any subset allowed):
+{
+  "fullName": "string",
+  "mobileNumber": "string",
+  "githubLink": "string",
+  "linkedinLink": "string",
+  "resumeLink": "string",
+  "about": "string"
+}
+Response 200:
+{
+  "success": true,
+  "message": "Profile updated successfully",
+  "user": { ... , "profileCompletion": 0-100 }
+}
+
+GET /api/users/application-status
+Response 200:
+{
+  "success": true,
+  "applicationStatus": "pending | shortlisted | rejected"
+}
+
+ADMIN ONLY:
+GET /api/users
+Response 200:
+{ "success": true, "users": [ ... ] }
+
+PATCH /api/users/:id/approve
+Response 200:
+{
+  "success": true,
+  "message": "User approved successfully",
+  "user": { ... , "applicationStatus": "shortlisted" }
+}
+
+PATCH /api/users/:id/reject
+Response 200:
+{
+  "success": true,
+  "message": "User rejected successfully",
+  "user": { ... , "applicationStatus": "rejected" }
+}
+
+
+7) ASSIGNMENT ROUTES
+--------------------
+ADMIN ONLY:
+POST /api/assignments
+Body:
+{
+  "title": "string",
+  "description": "string",
+  "category": "string",
+  "deadline": "ISO date string"
+}
+Response 201:
+{
+  "success": true,
+  "message": "Assignment created successfully",
+  "assignment": { ... }
+}
+
+DELETE /api/assignments/:id
+Response 200:
+{ "success": true, "message": "Assignment deleted successfully" }
+
+SHORTLISTED STUDENT ONLY:
+GET /api/assignments
+Response 200:
+{ "success": true, "assignments": [ ... ] }
+
+POST /api/assignments/:id/submit
+Body:
+{
+  "githubLink": "string",
+  "hostedLink": "string",
+  "finalResumeLink": "string",
+  "remark": "string"
+}
+Response 201:
+{
+  "success": true,
+  "message": "Assignment submitted successfully",
+  "submission": { ... }
+}
+
+
+8) ANNOUNCEMENT ROUTES
+----------------------
+ADMIN ONLY:
+POST /api/announcements
+Body:
+{
+  "title": "string",
+  "description": "string"
+}
+Response 201:
+{
+  "success": true,
+  "message": "Announcement created successfully",
+  "announcement": { ... }
+}
+
+DELETE /api/announcements/:id
+Response 200:
+{ "success": true, "message": "Announcement deleted successfully" }
+
+ALL AUTHENTICATED USERS:
+GET /api/announcements
+Response 200:
+{ "success": true, "announcements": [ ... ] }
+
+
+9) IMPORTANT ERROR RESPONSES (HANDLE IN FRONTEND)
+--------------------------------------------------
+401 Missing/Bad header:
+{ "success": false, "message": "Access token missing or invalid format" }
+
+401 Invalid/Expired token:
+{ "success": false, "message": "Invalid or expired token" }
+
+403 Admin-only route:
+{ "success": false, "message": "Access denied: admin only" }
+
+403 Non-shortlisted assignment access:
+{ "success": false, "message": "Access denied" }
+
+400 Late submission:
+{ "success": false, "message": "Submission deadline has passed" }
+
+409 Duplicate submission:
+{ "success": false, "message": "Assignment already submitted" }
+
+404 Unknown route:
+{ "success": false, "message": "Route not found: <path>" }
+
+
+10) FRONTEND QUICK CHECKLIST
+----------------------------
+[ ] Set API base URL to http://localhost:5000/api
+[ ] Redirect login to /api/auth/google in browser
+[ ] Save JWT token from callback response
+[ ] Add Authorization Bearer token to protected requests
+[ ] Handle 401/403 by redirecting to login or showing access message
+[ ] Use admin token for admin dashboard actions
+[ ] Use shortlisted student token for assignment listing/submission
+
+
+File prepared for frontend handoff.
+
+Frontend instructions
+Set backend base URL
+
+Use: http://localhost:5000/api
+Implement Google login button
+
+On click, redirect browser to:
+http://localhost:5000/api/auth/google
+(This is browser redirect flow, not normal fetch.)
+Capture JWT token after login
+
+Backend callback returns JSON with:
+token and user
+Store token in localStorage (or secure store).
+Send token in protected API calls
+
+Add header on every protected request:
+Authorization: Bearer <token>
+For POST/PUT/PATCH JSON requests:
+Content-Type: application/json
+Use role-based UI
+
+If user.role === "admin":
+show admin routes (approve/reject users, create/delete assignments, create/delete announcements)
+If student:
+show profile, application status, announcements
+If applicationStatus === "shortlisted":
+allow assignment list + submit
+Handle common backend errors
+
+401 token missing/invalid → logout + redirect to login
+403 access denied/admin only → show “not authorized”
+400 deadline passed → show assignment deadline message
+409 already submitted → show duplicate submission message
+Frontend pages to connect
+
+Login page → /api/auth/google
+Profile page:
+GET /api/users/profile
+PUT /api/users/profile
+GET /api/users/application-status
+Assignments:
+GET /api/assignments
+POST /api/assignments/:id/submit
+Announcements:
+GET /api/announcements
+Admin panel:
+GET /api/users
+PATCH /api/users/:id/approve
+PATCH /api/users/:id/reject
+POST /api/assignments
+DELETE /api/assignments/:id
+POST /api/announcements
+DELETE /api/announcements/:id

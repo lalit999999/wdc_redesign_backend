@@ -4,18 +4,19 @@ const googleAuthSuccess = (req, res) => {
     const user = req.user;
     const jwtSecret = process.env.JWT_SECRET;
 
+    // Get frontend URL from environment or use default
+    const frontendURL = process.env.FRONTEND_URL || "http://localhost:5173";
+
     if (!user) {
-        return res.status(401).json({
-            success: false,
-            message: "Authentication failed",
-        });
+        return res.redirect(
+            `${frontendURL}/auth-callback?error=Authentication failed`
+        );
     }
 
     if (!jwtSecret) {
-        return res.status(500).json({
-            success: false,
-            message: "JWT secret is not configured",
-        });
+        return res.redirect(
+            `${frontendURL}/auth-callback?error=JWT secret is not configured`
+        );
     }
 
     const token = jwt.sign(
@@ -29,12 +30,12 @@ const googleAuthSuccess = (req, res) => {
         }
     );
 
-    return res.status(200).json({
-        success: true,
-        message: "Google authentication successful",
-        token,
-        user,
-    });
+    // Instead of returning JSON, redirect to frontend with token and user data
+    const redirectURL = `${frontendURL}/auth-callback?token=${token}&user=${encodeURIComponent(
+        JSON.stringify(user)
+    )}`;
+
+    return res.redirect(redirectURL);
 };
 
 const googleAuthFailure = (_req, res) => {
