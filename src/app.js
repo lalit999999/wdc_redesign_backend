@@ -15,7 +15,13 @@ const app = express();
 
 connectDB();
 
-app.use(cors());
+app.use(cors({
+    origin: process.env.FRONTEND_URL, // Your Vite URL
+    credentials: true,               // Required for withCredentials: true
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],// Allows your interceptor's header
+    optionsSuccessStatus: 200
+}));
 app.use(express.json());
 app.use(passport.initialize());
 
