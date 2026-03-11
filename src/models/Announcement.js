@@ -12,6 +12,23 @@ const announcementSchema = new mongoose.Schema(
             required: true,
             trim: true,
         },
+        date: {
+            type: String,
+            trim: true,
+        },
+        time: {
+            type: String,
+            trim: true,
+        },
+        type: {
+            type: String,
+            enum: ["info", "success", "warning"],
+            default: "info",
+        },
+        important: {
+            type: Boolean,
+            default: false,
+        },
         createdAt: {
             type: Date,
             default: Date.now,

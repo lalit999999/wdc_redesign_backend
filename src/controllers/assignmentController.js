@@ -9,6 +9,22 @@ const createAssignment = async (req, res) => {
     try {
         const { title, description, category, deadline } = req.body;
 
+        // Validate required fields
+        if (!title || !description || !category || !deadline) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required fields: title, description, category, deadline",
+            });
+        }
+
+        // Ensure user is authenticated
+        if (!req.user || !req.user._id) {
+            return res.status(401).json({
+                success: false,
+                message: "User not authenticated",
+            });
+        }
+
         const assignment = await Assignment.create({
             title,
             description,
@@ -17,12 +33,23 @@ const createAssignment = async (req, res) => {
             createdBy: req.user._id,
         });
 
+        console.log("Assignment created successfully:", {
+            id: assignment._id,
+            title: assignment.title,
+            createdBy: assignment.createdBy,
+        });
+
         return res.status(201).json({
             success: true,
             message: "Assignment created successfully",
             assignment,
         });
     } catch (error) {
+        console.error("Error creating assignment:", {
+            message: error.message,
+            errors: error.errors,
+            stack: error.stack,
+        });
         return res.status(500).json({
             success: false,
             message: "Failed to create assignment",
@@ -57,7 +84,11 @@ const deleteAssignment = async (req, res) => {
 
 const getAssignments = async (req, res) => {
     try {
-        if (!ensureShortlistedStudent(req.user)) {
+        // Allow both admins and shortlisted students to access assignments
+        const isAdmin = req.user?.role === "admin";
+        const isShortlisted = ensureShortlistedStudent(req.user);
+
+        if (!isAdmin && !isShortlisted) {
             return res.status(403).json({
                 success: false,
                 message: "Access denied",

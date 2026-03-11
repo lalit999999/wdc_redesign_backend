@@ -7,6 +7,9 @@ dotenv.config();
 import connectDB from "./config/db.js";
 import passport from "./config/passport.js";
 import authRoutes from "./routes/authRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import assignmentRoutes from "./routes/assignmentRoutes.js";
+import announcementRoutes from "./routes/announcementRoutes.js";
 
 const app = express();
 
@@ -21,6 +24,9 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/assignments", assignmentRoutes);
+app.use("/api/announcements", announcementRoutes);
 
 const PORT = process.env.PORT || 5000;
 

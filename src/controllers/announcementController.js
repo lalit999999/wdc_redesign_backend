@@ -2,9 +2,30 @@ import Announcement from "../models/Announcement.js";
 
 const createAnnouncement = async (req, res) => {
     try {
-        const { title, description } = req.body;
+        const { title, message, description, date, time, type, important } = req.body;
 
-        const announcement = await Announcement.create({ title, description });
+        // Validate required fields
+        if (!title || (!message && !description)) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required fields: title and message/description",
+            });
+        }
+
+        const announcement = await Announcement.create({
+            title,
+            description: message || description,
+            date,
+            time,
+            type,
+            important,
+        });
+
+        console.log("Announcement created successfully:", {
+            id: announcement._id,
+            title: announcement.title,
+            createdAt: announcement.createdAt,
+        });
 
         return res.status(201).json({
             success: true,
@@ -12,6 +33,11 @@ const createAnnouncement = async (req, res) => {
             announcement,
         });
     } catch (error) {
+        console.error("Error creating announcement:", {
+            message: error.message,
+            errors: error.errors,
+            stack: error.stack,
+        });
         return res.status(500).json({
             success: false,
             message: "Failed to create announcement",
